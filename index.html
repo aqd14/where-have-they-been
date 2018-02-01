@@ -1,10 +1,92 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>Where Have They Been?</title>
+    <title>Simple Map</title>
+    <meta name="viewport" content="initial-scale=1.0">
+    <meta charset="utf-8">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAfCMrmYECLYC8YwUw1q5jTmozoNYDITtU&callback=initMap"
+            async defer></script>
+    <style>
+        /* Always set the map height explicitly to define the size of the div
+         * element that contains the map. */
+        #map {
+            height: 100%;
+        }
+        /* Optional: Makes the sample page fill the window. */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+    </style>
 </head>
 <body>
-<h1>Welcome to my new app!</h1>
+<div id="timeline"></div>
+<div id="map"></div>
+<script>
+    var map;
+    function initMap() {
+        map = new google.maps.Map(document.getElementById('map'), {
+            center: {lat: 21.027764, lng: 105.834160},
+            zoom: 8
+        });
+    }
+
+    $.getJSON("config.json", function(config) {
+        var access_token = config['access_token'];
+        var url = recentMediaURL('self', access_token);
+        $.get(url, function (response) {
+            response.data.forEach(function (item) {
+                console.log(item);
+                addMarker(item);
+            })
+
+            map.panTo(new google.maps.LatLng(40.75839, -73.98644));
+        });
+    });
+
+    function recentMediaURL(user_id, access_token) {
+        var url = 'https://api.instagram.com/v1/users/{user-id}/media/recent/?access_token=ACCESS-TOKEN'
+            .replace('{user-id}', user_id)
+            .replace('ACCESS-TOKEN', access_token);
+        return url;
+    }
+
+    function addMarker(item) {
+        var thumbnailURL = item.images.thumbnail.url;
+        if (item.location) {
+            var position = new google.maps.LatLng(item.location.latitude, item.location.longitude);
+            var marker = new google.maps.Marker({
+                position: position,
+                icon: thumbnailURL,
+                map: map
+            })
+            var infoWindow = new google.maps.InfoWindow({
+                content: getMarkerInfo(item)
+            });
+
+            marker.addListener('mouseover', function () {
+                infoWindow.open(map, marker);
+            });
+
+            marker.addListener('mouseout', function () {
+                infoWindow.close();
+            });
+        }
+    }
+
+    function getMarkerInfo(item) {
+        var contentString = '<div id="content">'+
+            '<div id="siteNotice">'+
+            '</div>'+
+            '<h1 id="firstHeading" class="firstHeading">' + item.location.name + '</h1>'+
+            '<div id="bodyContent">'+
+            '<p><b>Likes: </b>' + item.likes.count + '</p>'+
+            '</div>'+
+            '</div>';
+        return contentString;
+    }
+</script>
 </body>
 </html>
